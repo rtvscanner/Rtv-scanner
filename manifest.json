@@ -1,0 +1,27 @@
+{
+  "name": "RTV Scanner & Damage Alert",
+  "short_name": "RTV Scanner",
+  "description": "Aplikasi scan RTV dan monitoring produk Fresh Hypermart 284",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0f1e",
+  "theme_color": "#1a2744",
+  "orientation": "portrait",
+  "lang": "id",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["utilities", "productivity"],
+  "screenshots": []
+}
