@@ -443,9 +443,33 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <p style="margin-bottom:10px">Ubah password masuk aplikasi (diperlukan password admin).</p>
     <button class="sbtn" onclick="openOverlay('pwdOverlay')">&#128274; Ubah Password Masuk</button>
     <div class="divider"></div>
-    <h3 style="margin-bottom:8px">&#128276; Reminder Harian</h3>
-    <p style="margin-bottom:10px;font-size:12px;color:var(--text2)">Aktifkan pengingat otomatis setiap jam 07.00 dan 13.00 jika ada produk yang harus ditarik.</p>
-    <button class="sbtn green" onclick="enableReminder()" style="margin-bottom:8px">&#128276; Aktifkan Reminder</button>
+    <h3 style="margin-bottom:8px">&#128276; Pengaturan Notifikasi</h3>
+
+    <!-- Notif Tarik Produk -->
+    <div style="background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.2);border-radius:12px;padding:12px;margin-bottom:10px">
+      <div style="font-size:11px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px">&#128680; Notifikasi Tarik Produk</div>
+      <p style="font-size:12px;color:var(--text2);margin-bottom:10px">Notif otomatis saat produk mendekati atau harus ditarik.</p>
+      <div style="display:flex;gap:8px;margin-bottom:8px">
+        <div style="flex:1"><div style="font-size:10px;color:var(--text3);margin-bottom:4px">Jam Pagi</div><input type="time" id="notif-jam-pagi" value="11:00" class="finput" style="padding:8px;font-size:14px"></div>
+        <div style="flex:1"><div style="font-size:10px;color:var(--text3);margin-bottom:4px">Jam Sore</div><input type="time" id="notif-jam-sore" value="19:00" class="finput" style="padding:8px;font-size:14px"></div>
+      </div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:8px">Batas: CHILL H-14 &bull; FROZEN H-60 &bull; DRY H-14</div>
+      <button class="sbtn green" onclick="enableNotifTarik()" style="margin-bottom:0">&#128276; Aktifkan Notif Tarik</button>
+    </div>
+
+    <!-- Pengingat Checklist Suhu -->
+    <div style="background:rgba(6,182,212,0.08);border:1px solid rgba(6,182,212,0.2);border-radius:12px;padding:12px;margin-bottom:10px">
+      <div style="font-size:11px;font-weight:700;color:var(--cyan);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px">&#127777;&#65039; Pengingat Cek Suhu</div>
+      <p style="font-size:12px;color:var(--text2);margin-bottom:10px">Pengingat cek suhu 2x sehari — jam seragam untuk semua HP tim.</p>
+      <div style="display:flex;gap:8px;margin-bottom:8px">
+        <div style="flex:1"><div style="font-size:10px;color:var(--text3);margin-bottom:4px">Jam Pagi</div><input type="time" id="suhu-jam-pagi" value="09:00" class="finput" style="padding:8px;font-size:14px"></div>
+        <div style="flex:1"><div style="font-size:10px;color:var(--text3);margin-bottom:4px">Jam Malam</div><input type="time" id="suhu-jam-malam" value="20:00" class="finput" style="padding:8px;font-size:14px"></div>
+      </div>
+      <button class="sbtn" style="background:linear-gradient(135deg,var(--cyan),#0891b2);margin-bottom:0" onclick="enableNotifSuhu()">&#127777;&#65039; Aktifkan Pengingat Suhu</button>
+    </div>
+
+    <div id="notif-status-box" style="display:none;background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.25);border-radius:10px;padding:10px;margin-bottom:8px;font-size:12px;color:var(--green);text-align:center"></div>
+    <button class="sbtn danger" onclick="disableAllNotif()" style="margin-bottom:8px">&#10060; Matikan Semua Notifikasi</button>
     <div class="divider"></div>
     <button class="sbtn danger" onclick="doLogout()">&#128682; Keluar / Logout</button>
   </div>
@@ -1777,34 +1801,200 @@ async function requestNotifPermission(){
   return perm==='granted';
 }
 
-function scheduleReminder(){
-  if(!('Notification' in window)) return;
-  // Check every minute if it's time to remind
-  setInterval(()=>{
-    const now=new Date();
-    const h=now.getHours(), m=now.getMinutes();
-    // Remind at 07:00 and 13:00
-    if((h===7&&m===0)||(h===13&&m===0)){
-      const lastRemind=localStorage.getItem('rtv_last_remind');
-      const todayKey=now.toDateString()+h;
-      if(lastRemind===todayKey) return; // already reminded this hour
-      try{localStorage.setItem('rtv_last_remind',todayKey);}catch(e){}const urgent=NOTIFS.filter(n=>{const s=getStatus(n);return s.s==='danger'||s.s==='expired';});
-      if(urgent.length>0&&Notification.permission==='granted'){
-        new Notification('&#128680; RTV Scanner — Peringatan!',{
-          body: urgent.length+' produk perlu ditarik dari pajangan segera! Buka aplikasi untuk detail.',
-          icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">&#128230;</text></svg>'
-        });
-      }
-    }
-  }, 60000);
+// ═══════════════════════════════════════════════════
+// SISTEM NOTIFIKASI BARU
+// ═══════════════════════════════════════════════════
+
+// Batas mendekati tarik per suhu
+const NOTIF_THR = { CHILL: 14, FROZEN: 60, DRY: 14 };
+
+// Default jam notifikasi
+const DEFAULT_NOTIF = { tarikPagi:'11:00', tarikSore:'19:00', suhuPagi:'09:00', suhuMalam:'20:00' };
+
+// Load/save setting notifikasi ke Firebase agar seragam semua HP
+function getNotifSettings(){
+  try{
+    const s = localStorage.getItem('rtv_notif_settings');
+    return s ? JSON.parse(s) : {...DEFAULT_NOTIF};
+  }catch(e){ return {...DEFAULT_NOTIF}; }
+}
+function saveNotifSettings(s){
+  try{ localStorage.setItem('rtv_notif_settings', JSON.stringify(s)); }catch(e){}
+  // Simpan ke Firebase agar seragam semua HP
+  fbSaveField('notifSettings', s);
 }
 
+// Cek apakah produk mendekati batas tarik
+function isNearingTarik(n){
+  if(!n.expDate) return false;
+  const exp = new Date(n.expDate);
+  const now = new Date();
+  const days = Math.round((exp - now) / 86400000);
+  const suhu = (n.suhu||'DRY').toUpperCase();
+  const thr = NOTIF_THR[suhu] || 14;
+  // Mendekati = dalam batas threshold, Harus ditarik = sudah lewat atau hari ini
+  return days <= thr;
+}
+
+// Kirim notifikasi browser
+function sendNotif(title, body, icon='&#128276;'){
+  if(!('Notification' in window) || Notification.permission !== 'granted') return;
+  try{
+    new Notification(title, {
+      body,
+      icon: '/icon-192.png',
+      badge: '/icon-192.png',
+      tag: 'rtv-scanner'
+    });
+  }catch(e){}
+}
+
+// Cek dan kirim notifikasi tarik produk
+function checkNotifTarik(){
+  if(!NOTIFS || NOTIFS.length === 0) return;
+  const harus = NOTIFS.filter(n => {
+    const s = getStatus(n);
+    return s.s === 'danger' || s.s === 'expired';
+  });
+  const mendekati = NOTIFS.filter(n => {
+    const s = getStatus(n);
+    return s.s === 'warn';
+  });
+
+  if(harus.length > 0){
+    sendNotif(
+      '🔴 RTV Scanner — Segera Tarik!',
+      harus.length + ' produk HARUS ditarik hari ini! Tap untuk lihat detail.'
+    );
+  }
+  if(mendekati.length > 0){
+    setTimeout(()=>{
+      sendNotif(
+        '⚠️ RTV Scanner — Mendekati Batas Tarik',
+        mendekati.length + ' produk mendekati batas tarik. Tap untuk lihat detail.'
+      );
+    }, 3000);
+  }
+}
+
+// Cek dan kirim notifikasi suhu
+function checkNotifSuhu(){
+  sendNotif(
+    '🌡️ RTV Scanner — Waktunya Cek Suhu!',
+    'Jangan lupa catat suhu Chiller, Freezer & Display sekarang.'
+  );
+}
+
+// Scheduler utama — cek setiap menit
+let _notifInterval = null;
+function startNotifScheduler(){
+  if(_notifInterval) clearInterval(_notifInterval);
+  _notifInterval = setInterval(()=>{
+    if(Notification.permission !== 'granted') return;
+    const now = new Date();
+    const hm = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
+    const todayKey = now.toDateString();
+    const s = getNotifSettings();
+
+    // Notif tarik produk
+    if(hm === s.tarikPagi || hm === s.tarikSore){
+      const key = 'notif_tarik_' + todayKey + hm;
+      if(!sessionStorage.getItem(key)){
+        sessionStorage.setItem(key, '1');
+        checkNotifTarik();
+      }
+    }
+
+    // Notif cek suhu
+    if(hm === s.suhuPagi || hm === s.suhuMalam){
+      const key = 'notif_suhu_' + todayKey + hm;
+      if(!sessionStorage.getItem(key)){
+        sessionStorage.setItem(key, '1');
+        checkNotifSuhu();
+      }
+    }
+  }, 30000); // cek tiap 30 detik
+}
+
+// Load jam dari Firebase saat app dibuka
+function loadNotifSettingsFromFirebase(){
+  fbGet('/app/notifSettings').then(data=>{
+    if(data){
+      try{ localStorage.setItem('rtv_notif_settings', JSON.stringify(data)); }catch(e){}
+      // Update UI input jika ada
+      const s = data;
+      if(document.getElementById('notif-jam-pagi')) document.getElementById('notif-jam-pagi').value = s.tarikPagi || '11:00';
+      if(document.getElementById('notif-jam-sore')) document.getElementById('notif-jam-sore').value = s.tarikSore || '19:00';
+      if(document.getElementById('suhu-jam-pagi')) document.getElementById('suhu-jam-pagi').value = s.suhuPagi || '09:00';
+      if(document.getElementById('suhu-jam-malam')) document.getElementById('suhu-jam-malam').value = s.suhuMalam || '20:00';
+    }
+  });
+}
+
+// Aktifkan notif tarik produk
+async function enableNotifTarik(){
+  const granted = await requestNotifPermission();
+  if(!granted){
+    toast('Izin notifikasi ditolak. Aktifkan di pengaturan browser.','#ef4444');
+    return;
+  }
+  const pagi = document.getElementById('notif-jam-pagi').value || '11:00';
+  const sore = document.getElementById('notif-jam-sore').value || '19:00';
+  const s = getNotifSettings();
+  s.tarikPagi = pagi;
+  s.tarikSore = sore;
+  saveNotifSettings(s);
+  startNotifScheduler();
+  try{ localStorage.setItem('rtv_notif_tarik','true'); }catch(e){}
+  showNotifStatus('✅ Notif tarik aktif: jam ' + pagi + ' & ' + sore);
+  toast('&#128276; Notif tarik produk aktif!','#22c55e');
+}
+
+// Aktifkan pengingat suhu
+async function enableNotifSuhu(){
+  const granted = await requestNotifPermission();
+  if(!granted){
+    toast('Izin notifikasi ditolak. Aktifkan di pengaturan browser.','#ef4444');
+    return;
+  }
+  const pagi = document.getElementById('suhu-jam-pagi').value || '09:00';
+  const malam = document.getElementById('suhu-jam-malam').value || '20:00';
+  const s = getNotifSettings();
+  s.suhuPagi = pagi;
+  s.suhuMalam = malam;
+  saveNotifSettings(s);
+  startNotifScheduler();
+  try{ localStorage.setItem('rtv_notif_suhu','true'); }catch(e){}
+  showNotifStatus('✅ Pengingat suhu aktif: jam ' + pagi + ' & ' + malam);
+  toast('&#127777;&#65039; Pengingat suhu aktif!','#06b6d4');
+}
+
+// Matikan semua notifikasi
+function disableAllNotif(){
+  if(_notifInterval){ clearInterval(_notifInterval); _notifInterval = null; }
+  try{
+    localStorage.removeItem('rtv_notif_tarik');
+    localStorage.removeItem('rtv_notif_suhu');
+    localStorage.removeItem('rtv_reminder');
+  }catch(e){}
+  showNotifStatus('❌ Semua notifikasi dimatikan.');
+  toast('Semua notifikasi dimatikan','#ef4444');
+}
+
+function showNotifStatus(msg){
+  const box = document.getElementById('notif-status-box');
+  if(box){ box.style.display='block'; box.textContent=msg; }
+}
+
+// Fungsi lama untuk backward compatibility
+function scheduleReminder(){ startNotifScheduler(); }
 async function enableReminder(){
   const granted = await requestNotifPermission();
   if(granted){
-    scheduleReminder();
-    toast('&#128276; Reminder harian aktif! (07.00 & 13.00)','#22c55e');
-    try{localStorage.setItem('rtv_reminder','true');}catch(e){}} else {
+    startNotifScheduler();
+    toast('&#128276; Reminder harian aktif!','#22c55e');
+    try{localStorage.setItem('rtv_reminder','true');}catch(e){}
+  } else {
     toast('Izin notifikasi ditolak. Aktifkan di pengaturan browser.','#ef4444');
   }
 }
@@ -1889,6 +2079,12 @@ function refreshActivity(){
 
 // INIT
 updDbStats();
+// Load notif settings dari Firebase
+loadNotifSettingsFromFirebase();
+// Auto-start scheduler jika sebelumnya sudah aktif
+if(localStorage.getItem('rtv_notif_tarik')==='true' || localStorage.getItem('rtv_notif_suhu')==='true' || localStorage.getItem('rtv_reminder')==='true'){
+  requestNotifPermission().then(granted=>{ if(granted) startNotifScheduler(); });
+}
 
 // BROWSER ONLINE/OFFLINE EVENTS
 window.addEventListener('online', async function(){
