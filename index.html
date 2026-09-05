@@ -469,6 +469,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     </div>
 
     <div id="notif-status-box" style="display:none;background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.25);border-radius:10px;padding:10px;margin-bottom:8px;font-size:12px;color:var(--green);text-align:center"></div>
+    <button class="sbtn" style="background:rgba(168,85,247,0.15);border:1px solid rgba(168,85,247,0.3);color:var(--purple);margin-bottom:8px" onclick="testNotifikasi()">&#127381; Test Notifikasi Sekarang</button>
     <button class="sbtn danger" onclick="disableAllNotif()" style="margin-bottom:8px">&#10060; Matikan Semua Notifikasi</button>
     <div class="divider"></div>
     <button class="sbtn danger" onclick="doLogout()">&#128682; Keluar / Logout</button>
@@ -1837,16 +1838,48 @@ function isNearingTarik(n){
 }
 
 // Kirim notifikasi browser
-function sendNotif(title, body, icon='&#128276;'){
+function sendNotif(title, body){
   if(!('Notification' in window) || Notification.permission !== 'granted') return;
   try{
     new Notification(title, {
       body,
       icon: '/icon-192.png',
-      badge: '/icon-192.png',
-      tag: 'rtv-scanner'
+      tag: title
     });
-  }catch(e){}
+  }catch(e){ console.log('Notif error:', e); }
+}
+
+// Test notif — bisa dipanggil dari konsol browser
+window.testNotif = function(){
+  sendNotif('RTV Scanner - Test', 'Notifikasi berhasil! Sistem berjalan normal.');
+  console.log('Test notif dikirim. Permission:', Notification.permission);
+}
+
+async function testNotifikasi(){
+  if(!('Notification' in window)){
+    toast('Browser tidak mendukung notifikasi','#ef4444');
+    return;
+  }
+  // Minta izin kalau belum
+  const granted = await requestNotifPermission();
+  if(!granted){
+    toast('Izin notifikasi ditolak di browser','#ef4444');
+    showNotifStatus('Izin ditolak — aktifkan notifikasi Chrome di Setelan HP');
+    return;
+  }
+  // Kirim test langsung
+  try{
+    new Notification('RTV Scanner - Test', {
+      body: 'Berhasil! Notifikasi aktif dan berfungsi normal.',
+      icon: '/icon-192.png'
+    });
+    showNotifStatus('Test notifikasi dikirim! Periksa panel notifikasi HP.');
+    toast('Test notifikasi dikirim!','#22c55e');
+  }catch(e){
+    toast('Gagal: '+e.message,'#ef4444');
+    showNotifStatus('Error: '+e.message);
+    console.log('Notif error:', e);
+  }
 }
 
 // Cek dan kirim notifikasi tarik produk
@@ -1870,8 +1903,8 @@ function checkNotifTarik(){
   if(mendekati.length > 0){
     setTimeout(()=>{
       sendNotif(
-        '⚠️ RTV Scanner — Mendekati Batas Tarik',
-        mendekati.length + ' produk mendekati batas tarik. Tap untuk lihat detail.'
+        'RTV Scanner - Mendekati Batas Tarik',
+        mendekati.length + ' produk mendekati batas tarik. Buka aplikasi untuk detail.'
       );
     }, 3000);
   }
@@ -1880,8 +1913,8 @@ function checkNotifTarik(){
 // Cek dan kirim notifikasi suhu
 function checkNotifSuhu(){
   sendNotif(
-    '🌡️ RTV Scanner — Waktunya Cek Suhu!',
-    'Jangan lupa catat suhu Chiller, Freezer & Display sekarang.'
+    'RTV Scanner - Waktunya Cek Suhu!',
+    'Jangan lupa catat suhu Chiller, Freezer dan Display sekarang.'
   );
 }
 
