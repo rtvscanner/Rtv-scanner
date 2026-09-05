@@ -1859,40 +1859,44 @@ window.testNotif = function(){
 
 async function testNotifikasi(){
   if(!('Notification' in window)){
+    showNotifStatus('ERROR: Browser tidak mendukung notifikasi sama sekali');
     toast('Browser tidak mendukung notifikasi','#ef4444');
     return;
   }
+
+  // Tampilkan info debug dulu
+  const swSupport = 'serviceWorker' in navigator;
+  showNotifStatus('Mengecek... SW:'+swSupport+' Izin:'+Notification.permission);
+
   const granted = await requestNotifPermission();
   if(!granted){
-    toast('Izin notifikasi ditolak di browser','#ef4444');
-    showNotifStatus('Izin ditolak — aktifkan notifikasi Chrome di Setelan HP');
+    showNotifStatus('GAGAL: Izin notifikasi = '+Notification.permission);
+    toast('Izin notifikasi ditolak','#ef4444');
     return;
   }
+
   try{
     if('serviceWorker' in navigator){
-      const reg = await navigator.serviceWorker.getRegistration();
-      if(reg){
-        await reg.showNotification('RTV Scanner - Test', {
-          body: 'Berhasil! Notifikasi PWA aktif dan berfungsi normal.',
-          icon: '/icon-192.png',
-          badge: '/icon-192.png',
-          vibrate: [200, 100, 200]
-        });
-        showNotifStatus('Test notifikasi dikirim! Periksa panel notifikasi HP.');
-        toast('Test notifikasi dikirim!','#22c55e');
-        return;
-      }
+      // Tunggu SW siap
+      const reg = await navigator.serviceWorker.ready;
+      showNotifStatus('SW ready, mengirim notif...');
+      await reg.showNotification('RTV Scanner - Test', {
+        body: 'Berhasil! Notifikasi aktif.',
+        icon: '/icon-192.png',
+        vibrate: [200,100,200],
+        requireInteraction: false
+      });
+      showNotifStatus('Notifikasi dikirim via SW! Cek panel notif HP.');
+      toast('Test notifikasi dikirim!','#22c55e');
+      return;
     }
-    // Fallback browser biasa
-    new Notification('RTV Scanner - Test', {
-      body: 'Berhasil! Notifikasi aktif dan berfungsi normal.',
-      icon: '/icon-192.png'
-    });
-    showNotifStatus('Test notifikasi dikirim!');
+    // Fallback
+    new Notification('RTV Scanner - Test', { body: 'Test berhasil.' });
+    showNotifStatus('Notifikasi dikirim via browser biasa!');
     toast('Test notifikasi dikirim!','#22c55e');
   }catch(e){
+    showNotifStatus('ERROR: '+e.message);
     toast('Gagal: '+e.message,'#ef4444');
-    showNotifStatus('Error: '+e.message);
   }
 }
 
