@@ -1806,8 +1806,8 @@ async function requestNotifPermission(){
 // SISTEM NOTIFIKASI BARU
 // ═══════════════════════════════════════════════════
 
-// Batas mendekati tarik per suhu
-const NOTIF_THR = { CHILL: 14, FROZEN: 60, DRY: 14 };
+// Batas mendekati tarik — menggunakan THRESHOLD yang sudah ada di aplikasi
+// CHILL=7, FROZEN=30, DRY=14 (sesuai konfigurasi asli aplikasi)
 
 // Default jam notifikasi
 const DEFAULT_NOTIF = { tarikPagi:'11:00', tarikSore:'19:00', suhuPagi:'09:00', suhuMalam:'20:00' };
@@ -1825,38 +1825,31 @@ function saveNotifSettings(s){
   fbSaveField('notifSettings', s);
 }
 
-// Cek apakah produk mendekati batas tarik
-function isNearingTarik(n){
-  if(!n.expDate) return false;
-  const exp = new Date(n.expDate);
-  const now = new Date();
-  const days = Math.round((exp - now) / 86400000);
-  const suhu = (n.suhu||'DRY').toUpperCase();
-  const thr = NOTIF_THR[suhu] || 14;
-  // Mendekati = dalam batas threshold, Harus ditarik = sudah lewat atau hari ini
-  return days <= thr;
-}
+// isNearingTarik sudah ditangani oleh getStatus() yang ada
 
 // Kirim notifikasi — gunakan Service Worker jika PWA, fallback ke Notification biasa
 async function sendNotif(title, body){
   if(!('Notification' in window) || Notification.permission !== 'granted') return;
   try{
     if('serviceWorker' in navigator){
-      const reg = await navigator.serviceWorker.getRegistration();
+      const reg = await navigator.serviceWorker.ready;
       if(reg){
-        // PWA mode — pakai Service Worker
         await reg.showNotification(title, {
           body,
           icon: '/icon-192.png',
           badge: '/icon-192.png',
-          vibrate: [200, 100, 200]
+          vibrate: [200, 100, 200],
+          tag: title
         });
         return;
       }
     }
     // Fallback — browser biasa
     new Notification(title, { body, icon: '/icon-192.png' });
-  }catch(e){ console.log('Notif error:', e); }
+  }catch(e){
+    // Coba fallback terakhir
+    try{ new Notification(title, { body }); }catch(e2){ console.log('Notif gagal:', e2); }
+  }
 }
 
 // Test notif — bisa dipanggil dari konsol browser
@@ -1904,36 +1897,37 @@ async function testNotifikasi(){
 }
 
 // Cek dan kirim notifikasi tarik produk
-function checkNotifTarik(){
+async function checkNotifTarik(){
   if(!NOTIFS || NOTIFS.length === 0) return;
   const harus = NOTIFS.filter(n => {
+    if(!n.expDate) return false;
     const s = getStatus(n);
     return s.s === 'danger' || s.s === 'expired';
   });
   const mendekati = NOTIFS.filter(n => {
+    if(!n.expDate) return false;
     const s = getStatus(n);
     return s.s === 'warn';
   });
-
   if(harus.length > 0){
-    sendNotif(
-      '🔴 RTV Scanner — Segera Tarik!',
-      harus.length + ' produk HARUS ditarik hari ini! Tap untuk lihat detail.'
+    await sendNotif(
+      'RTV Scanner - Segera Tarik!',
+      harus.length + ' produk HARUS ditarik hari ini. Buka aplikasi.'
     );
   }
   if(mendekati.length > 0){
-    setTimeout(()=>{
-      sendNotif(
+    setTimeout(async ()=>{
+      await sendNotif(
         'RTV Scanner - Mendekati Batas Tarik',
-        mendekati.length + ' produk mendekati batas tarik. Buka aplikasi untuk detail.'
+        mendekati.length + ' produk mendekati batas tarik. Buka aplikasi.'
       );
     }, 3000);
   }
 }
 
 // Cek dan kirim notifikasi suhu
-function checkNotifSuhu(){
-  sendNotif(
+async function checkNotifSuhu(){
+  await sendNotif(
     'RTV Scanner - Waktunya Cek Suhu!',
     'Jangan lupa catat suhu Chiller, Freezer dan Display sekarang.'
   );
@@ -1943,7 +1937,7 @@ function checkNotifSuhu(){
 let _notifInterval = null;
 function startNotifScheduler(){
   if(_notifInterval) clearInterval(_notifInterval);
-  _notifInterval = setInterval(()=>{
+  _notifInterval = setInterval(async ()=>{
     if(Notification.permission !== 'granted') return;
     const now = new Date();
     const hm = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
@@ -1955,7 +1949,7 @@ function startNotifScheduler(){
       const key = 'notif_tarik_' + todayKey + hm;
       if(!sessionStorage.getItem(key)){
         sessionStorage.setItem(key, '1');
-        checkNotifTarik();
+        await checkNotifTarik();
       }
     }
 
@@ -1964,7 +1958,7 @@ function startNotifScheduler(){
       const key = 'notif_suhu_' + todayKey + hm;
       if(!sessionStorage.getItem(key)){
         sessionStorage.setItem(key, '1');
-        checkNotifSuhu();
+        await checkNotifSuhu();
       }
     }
   }, 30000); // cek tiap 30 detik
