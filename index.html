@@ -1656,7 +1656,7 @@ function renderCI(){
 }
 
 // NOTIFIKASI
-var THRESHOLD={CHILL:7,FROZEN:30,DRY:14};
+var THRESHOLD={CHILL:14,FROZEN:60,DRY:14}; // Sesuai standar Fresh Hypermart
 function openNotifByKey(key){const item=ITEM_CACHE[key];if(item)openNotifPopup(item);}
 function openNotifPopup(item){
   pendingNotifItem=item;
@@ -1821,8 +1821,7 @@ function getNotifSettings(){
 }
 function saveNotifSettings(s){
   try{ localStorage.setItem('rtv_notif_settings', JSON.stringify(s)); }catch(e){}
-  // Simpan ke Firebase agar seragam semua HP
-  fbSaveField('notifSettings', s);
+  fbSaveField('notifSettings', s); // Simpan ke Firebase agar jam seragam semua HP
 }
 
 // isNearingTarik sudah ditangani oleh getStatus() yang ada
@@ -1968,19 +1967,18 @@ function startNotifScheduler(){
   }, 30000); // cek tiap 30 detik
 }
 
-// Load jam dari Firebase saat app dibuka
-function loadNotifSettingsFromFirebase(){
-  fbGet('/app/notifSettings').then(data=>{
-    if(data){
+// Load jam notifikasi dari Firebase saat app dibuka
+async function loadNotifSettingsFromFirebase(){
+  try{
+    const data = await fbGet('/app/notifSettings');
+    if(data && typeof data === 'object'){
       try{ localStorage.setItem('rtv_notif_settings', JSON.stringify(data)); }catch(e){}
-      // Update UI input jika ada
-      const s = data;
-      if(document.getElementById('notif-jam-pagi')) document.getElementById('notif-jam-pagi').value = s.tarikPagi || '11:00';
-      if(document.getElementById('notif-jam-sore')) document.getElementById('notif-jam-sore').value = s.tarikSore || '19:00';
-      if(document.getElementById('suhu-jam-pagi')) document.getElementById('suhu-jam-pagi').value = s.suhuPagi || '09:00';
-      if(document.getElementById('suhu-jam-malam')) document.getElementById('suhu-jam-malam').value = s.suhuMalam || '20:00';
+      if(document.getElementById('notif-jam-pagi')) document.getElementById('notif-jam-pagi').value = data.tarikPagi || '11:00';
+      if(document.getElementById('notif-jam-sore')) document.getElementById('notif-jam-sore').value = data.tarikSore || '19:00';
+      if(document.getElementById('suhu-jam-pagi')) document.getElementById('suhu-jam-pagi').value = data.suhuPagi || '09:00';
+      if(document.getElementById('suhu-jam-malam')) document.getElementById('suhu-jam-malam').value = data.suhuMalam || '20:00';
     }
-  });
+  }catch(e){ /* Firebase belum ada notifSettings, pakai default */ }
 }
 
 // Aktifkan notif tarik produk
