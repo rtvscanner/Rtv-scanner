@@ -122,6 +122,13 @@ async function kirimFCM(title, body, tag) {
   }
 }
 
+// ── Parse threshold dari string "H-14" → 14 ──
+function parseThr(tarikStr) {
+  if (!tarikStr) return 999;
+  const match = String(tarikStr).match(/(\d+)/);
+  return match ? parseInt(match[1]) : 999;
+}
+
 // ── Analisa produk ──
 async function analisaProduk() {
   const notifs = await getAllNotifs();
@@ -131,12 +138,18 @@ async function analisaProduk() {
   const tarik = { CHILL: [], FROZEN: [], DRY: [] };
 
   notifs.forEach(n => {
-    if (!n.tglTarik) return;
+    // Gunakan expDate sebagai tanggal acuan
+    if (!n.expDate) return;
     const suhu = (n.suhu || 'DRY').toUpperCase();
     const key = ['CHILL','FROZEN','DRY'].includes(suhu) ? suhu : 'DRY';
-    const sisa = hariSisa(n.tglTarik);
+    const sisa = hariSisa(n.expDate);
+
+    // Threshold tarik dari field "tarik" (misal "H-14" → 14)
+    const thrT = parseThr(n.tarik);
+    // Threshold perhatian = sesuai THR_WARN
     const thrW = THR_WARN[key];
-    const thrT = THR_TARIK[key];
+
+    console.log(`  ${n.desc || n.plu}: expDate=${n.expDate} sisa=${sisa} thrT=${thrT} thrW=${thrW}`);
 
     if (sisa <= thrT) {
       tarik[key].push(n);
@@ -144,6 +157,9 @@ async function analisaProduk() {
       warn[key].push(n);
     }
   });
+
+  console.log(`📊 Harus ditarik: CHILL=${tarik.CHILL.length} FROZEN=${tarik.FROZEN.length} DRY=${tarik.DRY.length}`);
+  console.log(`📊 Perhatian: CHILL=${warn.CHILL.length} FROZEN=${warn.FROZEN.length} DRY=${warn.DRY.length}`);
 
   return { warn, tarik };
 }
