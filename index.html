@@ -473,6 +473,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <button class="sbtn" style="background:rgba(168,85,247,0.15);border:1px solid rgba(168,85,247,0.3);color:var(--purple);margin-bottom:8px" onclick="testNotifikasi()">&#127381; Test Notifikasi Sekarang</button>
     <button class="sbtn danger" onclick="disableAllNotif()" style="margin-bottom:8px">&#10060; Matikan Semua Notifikasi</button>
     <div class="divider"></div>
+    <h3 style="margin-bottom:8px">&#128241; Status FCM</h3>
+    <div id="fcm-status" style="font-size:12px;color:var(--text2);margin-bottom:8px">Memuat status FCM...</div>
+    <button class="sbtn" style="background:rgba(34,197,94,0.15);border:1px solid rgba(34,197,94,0.3);color:var(--green);margin-bottom:8px" onclick="testFCMToken()">&#128279; Daftarkan Token FCM</button>
+    <div class="divider"></div>
     <button class="sbtn danger" onclick="doLogout()">&#128682; Keluar / Logout</button>
   </div>
 </div>
@@ -1304,7 +1308,7 @@ function showPage(p,el){
   if(p==='add')renderCI();
   if(p==='notif')renderNotifList();
   if(p==='export')renderExportLog();
-  if(p==='profile'){loadProfile();setText('ps-scan',scanHist.length);}
+  if(p==='profile'){loadProfile();setText('ps-scan',scanHist.length);setTimeout(updateFCMStatus,300);}
   if(p==='data')updDbStats();
   if(p==='activity')refreshActivity();
 }
@@ -1659,7 +1663,10 @@ function renderCI(){
 }
 
 // NOTIFIKASI
-var THRESHOLD={CHILL:14,FROZEN:60,DRY:14}; // Sesuai standar Fresh Hypermart
+var THRESHOLD={
+  CHILL_WARN:21, FROZEN_WARN:60, DRY_WARN:21,  // Level perhatian (diskon)
+  CHILL:7, FROZEN:30, DRY:7                      // Level tarik dari pajangan
+};
 function openNotifByKey(key){const item=ITEM_CACHE[key];if(item)openNotifPopup(item);}
 function openNotifPopup(item){
   pendingNotifItem=item;
@@ -1687,10 +1694,14 @@ function getStatus(n){
   const today=new Date();today.setHours(0,0,0,0);
   const exp=new Date(n.expDate);exp.setHours(0,0,0,0);
   const days=Math.round((exp-today)/86400000);
-  const thr=THRESHOLD[n.suhu]||7;
+  const suhu=(n.suhu||'DRY').toUpperCase();
+  // Level tarik (H-7 CHILL/DRY, H-30 FROZEN)
+  const thr=THRESHOLD[suhu]||7;
+  // Level perhatian (H-21 CHILL/DRY, H-60 FROZEN)
+  const thrWarn=THRESHOLD[suhu+'_WARN']||21;
   if(days<0)return{s:'expired',label:'SUDAH EXPIRED ('+Math.abs(days)+' hari lalu)',days,thr};
   if(days<=thr)return{s:'danger',label:'HARUS DITARIK! ('+days+' hari lagi)',days,thr};
-  if(days<=thr*2)return{s:'warn',label:'Mendekati batas tarik ('+days+' hari lagi)',days,thr};
+  if(days<=thrWarn)return{s:'warn',label:'Mendekati batas tarik ('+days+' hari lagi)',days,thr};
   return{s:'ok',label:'Aman — '+days+' hari lagi',days,thr};
 }
 function updNotifBadge(){
@@ -2140,6 +2151,44 @@ if(localStorage.getItem('rtv_notif_tarik')==='true' || localStorage.getItem('rtv
 }
 
 // FCM dipisah ke fcm.js
+
+// Fungsi test/daftarkan FCM token dari UI
+async function testFCMToken() {
+  const statusEl = document.getElementById('fcm-status');
+  if (statusEl) statusEl.textContent = '⏳ Mendaftarkan token FCM...';
+  try {
+    await registerFCMToken();
+    // Cek apakah token sudah tersimpan di Firebase
+    const res = await fetch('https://rtv-scaner-default-rtdb.asia-southeast1.firebasedatabase.app/app/fcmTokens.json');
+    const data = await res.json();
+    if (data && Object.keys(data).length > 0) {
+      if (statusEl) statusEl.textContent = '✅ Token FCM terdaftar! Notifikasi siap diterima.';
+      toast('✅ FCM token berhasil didaftarkan!', '#22c55e');
+    } else {
+      if (statusEl) statusEl.textContent = '⚠️ Token belum tersimpan. Coba lagi.';
+    }
+  } catch(e) {
+    if (statusEl) statusEl.textContent = '❌ Error: ' + e.message;
+    toast('❌ FCM gagal: ' + e.message, '#ef4444');
+  }
+}
+
+// Update status FCM saat profil dibuka
+function updateFCMStatus() {
+  const statusEl = document.getElementById('fcm-status');
+  if (!statusEl) return;
+  if (!('Notification' in window)) {
+    statusEl.textContent = '❌ Browser tidak support notifikasi';
+    return;
+  }
+  if (Notification.permission === 'granted') {
+    statusEl.textContent = '✅ Izin notifikasi: Diizinkan — tap "Daftarkan Token FCM"';
+  } else if (Notification.permission === 'denied') {
+    statusEl.textContent = '❌ Izin notifikasi ditolak — aktifkan di pengaturan browser';
+  } else {
+    statusEl.textContent = '⚠️ Izin notifikasi belum diberikan — tap "Daftarkan Token FCM"';
+  }
+}
 
 // BROWSER ONLINE/OFFLINE EVENTS
 window.addEventListener('online', async function(){
