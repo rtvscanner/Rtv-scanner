@@ -1,0 +1,31 @@
+name: RTV Scanner - Notifikasi Otomatis
+
+on:
+  schedule:
+    # Semua waktu dalam UTC (WIT = UTC+9)
+    - cron: '30 23 * * *'  # 08.30 WIT - Cek Suhu Pagi
+    - cron: '0 2 * * *'    # 11.00 WIT - Tarik Produk Siang
+    - cron: '0 9 * * *'    # 18.00 WIT - Tarik Produk Sore
+    - cron: '30 11 * * *'  # 20.30 WIT - Cek Suhu Malam
+  workflow_dispatch:        # Bisa dijalankan manual untuk test
+
+jobs:
+  kirim-notif:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: npm install firebase-admin node-fetch
+
+      - name: Kirim Notifikasi
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          GITHUB_EVENT_SCHEDULE: ${{ github.event.schedule }}
+        run: node scripts/kirim-notif.js
