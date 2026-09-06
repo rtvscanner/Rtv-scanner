@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<script src="fcm.js" defer></script>
 <title>RTV Scanner & Damage Alert — Hypermart</title>
 <!-- PWA -->
 <link rel="manifest" href="/manifest.json">
@@ -1115,6 +1116,8 @@ function doLogin(){
     if(al){ ACTIVITY_LOG=Array.isArray(al)?al:Object.values(al); try{localStorage.setItem('rtv_activity',JSON.stringify(ACTIVITY_LOG));}catch(e){}}
     loadProfile(); updStats(); startPolling();
     logActivity('LOGIN','Masuk ke aplikasi');
+    // Daftarkan FCM token setelah login
+    setTimeout(registerFCMToken, 2000);
     // Start reminder if previously enabled
     if(localStorage.getItem('rtv_reminder')==='true') scheduleReminder();
     setTimeout(checkStartupPopup,2500); // Wait for all data to be ready
@@ -2135,6 +2138,8 @@ loadNotifSettingsFromFirebase();
 if(localStorage.getItem('rtv_notif_tarik')==='true' || localStorage.getItem('rtv_notif_suhu')==='true' || localStorage.getItem('rtv_reminder')==='true'){
   requestNotifPermission().then(granted=>{ if(granted) startNotifScheduler(); });
 }
+
+// FCM dipisah ke fcm.js
 
 // BROWSER ONLINE/OFFLINE EVENTS
 window.addEventListener('online', async function(){
