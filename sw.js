@@ -9,13 +9,13 @@ const APP_URL = 'https://armstrong-sabandar-rtv-scanner.vercel.app';
 
 // Inisialisasi Firebase di Service Worker
 firebase.initializeApp({
-  apiKey: "AIzaSyANB6LLCOSnZp8bTsi2IW3kOt7",
+  apiKey: "AIzaSyANB6LLCOSnZp8bTsi2IW3kOt7pOZ4olpw",
   authDomain: "rtv-scaner.firebaseapp.com",
   databaseURL: "https://rtv-scaner-default-rtdb.asia-southeast1.firebasedatabase.app",
   projectId: "rtv-scaner",
   storageBucket: "rtv-scaner.firebasestorage.app",
   messagingSenderId: "679661725568",
-  appId: "1:679661725568:web:6147b2db4ece6"
+  appId: "1:679661725568:web:6147b2db4ece6d810a4365"
 });
 
 const messaging = firebase.messaging();
