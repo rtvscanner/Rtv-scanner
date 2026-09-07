@@ -2157,7 +2157,19 @@ async function testFCMToken() {
   const statusEl = document.getElementById('fcm-status');
   if (statusEl) statusEl.textContent = '⏳ Mendaftarkan token FCM...';
   try {
-    await registerFCMToken();
+    // Cek apakah registerFCMToken sudah tersedia dari fcm.js
+    if (typeof registerFCMToken === 'function') {
+      await registerFCMToken();
+    } else {
+      // Tunggu fcm.js selesai load
+      if (statusEl) statusEl.textContent = '⏳ Memuat FCM, tunggu sebentar...';
+      await new Promise(r => setTimeout(r, 2000));
+      if (typeof registerFCMToken === 'function') {
+        await registerFCMToken();
+      } else {
+        throw new Error('FCM belum siap — coba refresh halaman dulu');
+      }
+    }
     // Cek apakah token sudah tersimpan di Firebase
     const res = await fetch('https://rtv-scaner-default-rtdb.asia-southeast1.firebasedatabase.app/app/fcmTokens.json');
     const data = await res.json();
@@ -2174,19 +2186,29 @@ async function testFCMToken() {
 }
 
 // Update status FCM saat profil dibuka
-function updateFCMStatus() {
+async function updateFCMStatus() {
   const statusEl = document.getElementById('fcm-status');
   if (!statusEl) return;
   if (!('Notification' in window)) {
     statusEl.textContent = '❌ Browser tidak support notifikasi';
     return;
   }
+  // Cek token FCM di Firebase
+  try {
+    const res = await fetch('https://rtv-scaner-default-rtdb.asia-southeast1.firebasedatabase.app/app/fcmTokens.json');
+    const data = await res.json();
+    if (data && Object.keys(data).length > 0) {
+      statusEl.textContent = '✅ Token FCM aktif — notifikasi siap diterima meski app tertutup';
+      return;
+    }
+  } catch(e) {}
+
   if (Notification.permission === 'granted') {
-    statusEl.textContent = '✅ Izin notifikasi: Diizinkan — tap "Daftarkan Token FCM"';
+    statusEl.textContent = '⚠️ Izin OK tapi token belum terdaftar — tap "Daftarkan Token FCM"';
   } else if (Notification.permission === 'denied') {
     statusEl.textContent = '❌ Izin notifikasi ditolak — aktifkan di pengaturan browser';
   } else {
-    statusEl.textContent = '⚠️ Izin notifikasi belum diberikan — tap "Daftarkan Token FCM"';
+    statusEl.textContent = '⚠️ Tap "Daftarkan Token FCM" untuk aktifkan notifikasi';
   }
 }
 
