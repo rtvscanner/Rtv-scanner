@@ -2236,16 +2236,7 @@ async function registerFCMToken() {
   if (!res.ok) throw new Error('Gagal simpan token ke Firebase');
   console.log('[FCM] Token saved:', deviceKey);
 
-  // Handle token refresh
-  _fcmMessaging.onTokenRefresh(async () => {
-    const newToken = await _fcmMessaging.getToken({ vapidKey: FCM_VAPID });
-    if (newToken) {
-      await fetch(
-        'https://rtv-scaner-default-rtdb.asia-southeast1.firebasedatabase.app/app/fcmTokens/' + deviceKey + '.json',
-        { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(newToken) }
-      );
-    }
-  });
+  console.log('[FCM] Token registration complete!');
 }
 
 // Init FCM saat halaman siap
