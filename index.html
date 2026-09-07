@@ -3,7 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
-<script src="fcm.js" defer></script>
+<!-- Firebase SDK untuk FCM -->
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-messaging-compat.js"></script>
 <title>RTV Scanner & Damage Alert — Hypermart</title>
 <!-- PWA -->
 <link rel="manifest" href="/manifest.json">
@@ -2150,7 +2152,106 @@ if(localStorage.getItem('rtv_notif_tarik')==='true' || localStorage.getItem('rtv
   requestNotifPermission().then(granted=>{ if(granted) startNotifScheduler(); });
 }
 
-// FCM dipisah ke fcm.js
+// ═══════════════════════════════════════════════════
+// FCM — Firebase Cloud Messaging (Inline)
+// ═══════════════════════════════════════════════════
+const FCM_VAPID = 'BOzu3p_bCr0RP3L8E-hC2gcfRjH8Lx5eiXe6biNLR0CuUwiQuQdmBBt455rBQNxW_pf1M8gY-PXbQdGEiekLbDo';
+const FCM_CONFIG = {
+  apiKey: "AIzaSyANB6LLCOSnZp8bTsi2IW3kOt7",
+  authDomain: "rtv-scaner.firebaseapp.com",
+  databaseURL: "https://rtv-scaner-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "rtv-scaner",
+  storageBucket: "rtv-scaner.firebasestorage.app",
+  messagingSenderId: "679661725568",
+  appId: "1:679661725568:web:6147b2db4ece6"
+};
+
+let _fcmMessaging = null;
+
+function initFCMInline() {
+  try {
+    if (typeof firebase === 'undefined') {
+      console.log('[FCM] Firebase SDK belum load');
+      return false;
+    }
+    const app = firebase.apps.length ? firebase.apps[0] : firebase.initializeApp(FCM_CONFIG);
+    _fcmMessaging = firebase.messaging(app);
+    console.log('[FCM] Initialized inline');
+
+    // Handle notif foreground
+    _fcmMessaging.onMessage(payload => {
+      const { title, body } = payload.notification || {};
+      if (!title) return;
+      toast('🔔 ' + title + ': ' + (body || ''), '#1e3a5f', 6000);
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.ready.then(reg => {
+          reg.showNotification(title, {
+            body: body || '',
+            icon: '/icon-192.png',
+            badge: '/icon-192.png',
+            vibrate: [200, 100, 200]
+          });
+        });
+      }
+    });
+    return true;
+  } catch(e) {
+    console.log('[FCM] Init error:', e.message);
+    return false;
+  }
+}
+
+async function registerFCMToken() {
+  // Init FCM kalau belum
+  if (!_fcmMessaging) {
+    const ok = initFCMInline();
+    if (!ok) {
+      throw new Error('Firebase SDK belum siap — coba refresh halaman');
+    }
+  }
+
+  // Minta izin notifikasi
+  if (Notification.permission !== 'granted') {
+    const perm = await Notification.requestPermission();
+    if (perm !== 'granted') throw new Error('Izin notifikasi ditolak');
+  }
+
+  // Dapatkan token FCM
+  const token = await _fcmMessaging.getToken({ vapidKey: FCM_VAPID });
+  if (!token) throw new Error('Token FCM tidak tersedia');
+
+  console.log('[FCM] Token:', token.substring(0, 30) + '...');
+
+  // Simpan ke Firebase via REST
+  const deviceKey = 'dev_' + token.substring(0, 16).replace(/[^a-zA-Z0-9]/g, '_');
+  const res = await fetch(
+    'https://rtv-scaner-default-rtdb.asia-southeast1.firebasedatabase.app/app/fcmTokens/' + deviceKey + '.json',
+    {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(token)
+    }
+  );
+
+  if (!res.ok) throw new Error('Gagal simpan token ke Firebase');
+  console.log('[FCM] Token saved:', deviceKey);
+
+  // Handle token refresh
+  _fcmMessaging.onTokenRefresh(async () => {
+    const newToken = await _fcmMessaging.getToken({ vapidKey: FCM_VAPID });
+    if (newToken) {
+      await fetch(
+        'https://rtv-scaner-default-rtdb.asia-southeast1.firebasedatabase.app/app/fcmTokens/' + deviceKey + '.json',
+        { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(newToken) }
+      );
+    }
+  });
+}
+
+// Init FCM saat halaman siap
+window.addEventListener('load', () => {
+  setTimeout(initFCMInline, 1000);
+});
 
 // Fungsi test/daftarkan FCM token dari UI
 async function testFCMToken() {
