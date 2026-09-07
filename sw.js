@@ -5,7 +5,7 @@ importScripts('https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js'
 importScripts('https://www.gstatic.com/firebasejs/10.7.0/firebase-messaging-compat.js');
 
 const CACHE_NAME = 'rtv-scanner-v3';
-const APP_URL = 'https://armstrong-sabandar-rtvscanner-pwa.netlify.app';
+const APP_URL = 'https://armstrong-sabandar-rtv-scanner.vercel.app';
 
 // Inisialisasi Firebase di Service Worker
 firebase.initializeApp({
