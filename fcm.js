@@ -134,3 +134,6 @@ if (document.readyState === 'loading') {
 } else {
   initFCM();
 }
+
+// Expose ke global scope agar bisa dipanggil dari index.html
+window.registerFCMToken = registerFCMToken;
