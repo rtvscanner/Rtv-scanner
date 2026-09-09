@@ -33,17 +33,17 @@ function hariSisa(tglTarik) {
 // ── Tentukan jenis notif berdasarkan jadwal ──
 function jenisNotif() {
   const schedule = process.env.GITHUB_EVENT_SCHEDULE || '';
-  // Cek Suhu: 08.30 (00:30 UTC) dan 20.30 (12:30 UTC)
-  if (schedule === '30 0 * * *' || schedule === '30 12 * * *') {
+  // Cek Suhu: 08.30 WIT (23:30 UTC) dan 20.30 WIT (11:30 UTC)
+  if (schedule === '30 23 * * *' || schedule === '30 11 * * *') {
     return 'suhu';
   }
-  // Tarik Produk: 11.00 (03:00 UTC) dan 18.00 (10:00 UTC)
+  // Tarik Produk: 11.00 WIT (02:00 UTC) dan 18.00 WIT (09:00 UTC)
   return 'tarik';
 }
 
 // ── Ambil semua FCM token ──
 async function getAllTokens() {
-  const snap = await db.ref('/app/fcmTokens').once('value');
+  const snap = await db.ref('/fcmTokens').once('value');
   if (!snap.exists()) return [];
   const data = snap.val();
   return Object.values(data).filter(t => t && typeof t === 'string');
@@ -51,7 +51,7 @@ async function getAllTokens() {
 
 // ── Ambil semua produk notifikasi ──
 async function getAllNotifs() {
-  const snap = await db.ref('/app/notifs').once('value');
+  const snap = await db.ref('/notifs').once('value');
   if (!snap.exists()) return [];
   const data = snap.val();
   if (Array.isArray(data)) return data.filter(Boolean);
@@ -107,13 +107,13 @@ async function kirimFCM(title, body, tag) {
       });
       // Hapus token invalid dari Firebase
       if (invalid.length > 0) {
-        const snap = await db.ref('/app/fcmTokens').once('value');
+        const snap = await db.ref('/fcmTokens').once('value');
         const data = snap.val();
         const updates = {};
         Object.entries(data).forEach(([key, val]) => {
           if (invalid.includes(val)) updates[key] = null;
         });
-        await db.ref('/app/fcmTokens').update(updates);
+        await db.ref('/fcmTokens').update(updates);
         console.log(`🗑️ ${invalid.length} token tidak valid dihapus`);
       }
     }
@@ -138,15 +138,12 @@ async function analisaProduk() {
   const tarik = { CHILL: [], FROZEN: [], DRY: [] };
 
   notifs.forEach(n => {
-    // Gunakan expDate sebagai tanggal acuan
     if (!n.expDate) return;
     const suhu = (n.suhu || 'DRY').toUpperCase();
     const key = ['CHILL','FROZEN','DRY'].includes(suhu) ? suhu : 'DRY';
     const sisa = hariSisa(n.expDate);
 
-    // Threshold tarik dari field "tarik" (misal "H-14" → 14)
     const thrT = parseThr(n.tarik);
-    // Threshold perhatian = sesuai THR_WARN
     const thrW = THR_WARN[key];
 
     console.log(`  ${n.desc || n.plu}: expDate=${n.expDate} sisa=${sisa} thrT=${thrT} thrW=${thrW}`);
@@ -202,14 +199,12 @@ async function main() {
   console.log(`⏰ Waktu: ${new Date().toLocaleString('id-ID', {timeZone: 'Asia/Makassar'})}\n`);
 
   if (jenis === 'suhu') {
-    // Kirim pengingat cek suhu
     await kirimFCM(
       'RTV Scanner - Waktunya Cek Suhu!',
       'Jangan lupa catat suhu Chiller, Freezer dan Display sekarang.',
       'rtv-suhu'
     );
   } else {
-    // Kirim notif tarik produk
     const { warn, tarik } = await analisaProduk();
 
     if (adaProduk(tarik)) {
@@ -222,7 +217,6 @@ async function main() {
       console.log('✅ Tidak ada produk yang harus ditarik hari ini.');
     }
 
-    // Tunggu 5 detik sebelum kirim notif kedua
     if (adaProduk(warn)) {
       await new Promise(r => setTimeout(r, 5000));
       await kirimFCM(
