@@ -453,10 +453,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       <div style="font-size:11px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px">&#128680; Notifikasi Tarik Produk</div>
       <p style="font-size:12px;color:var(--text2);margin-bottom:10px">Notif otomatis saat produk mendekati atau harus ditarik.</p>
       <div style="display:flex;gap:8px;margin-bottom:8px">
-        <div style="flex:1"><div style="font-size:10px;color:var(--text3);margin-bottom:4px">Jam Pagi</div><input type="time" id="notif-jam-pagi" value="11:00" class="finput" style="padding:8px;font-size:14px"></div>
-        <div style="flex:1"><div style="font-size:10px;color:var(--text3);margin-bottom:4px">Jam Sore</div><input type="time" id="notif-jam-sore" value="19:00" class="finput" style="padding:8px;font-size:14px"></div>
+        <div style="flex:1"><div style="font-size:10px;color:var(--text3);margin-bottom:4px">Jam Pagi (WIT)</div><input type="time" id="notif-jam-pagi" value="11:00" class="finput" style="padding:8px;font-size:14px"></div>
+        <div style="flex:1"><div style="font-size:10px;color:var(--text3);margin-bottom:4px">Jam Sore (WIT)</div><input type="time" id="notif-jam-sore" value="18:00" class="finput" style="padding:8px;font-size:14px"></div>
       </div>
-      <div style="font-size:11px;color:var(--text3);margin-bottom:8px">Batas: CHILL H-14 &bull; FROZEN H-60 &bull; DRY H-14</div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:4px">Batas: CHILL H-14 &bull; FROZEN H-60 &bull; DRY H-14</div>
+      <div style="font-size:10px;color:var(--text3);margin-bottom:8px;font-style:italic">⚙️ Jam ini untuk notif saat app terbuka. Notif FCM (app tertutup) mengikuti jadwal server.</div>
       <button class="sbtn green" onclick="enableNotifTarik()" style="margin-bottom:0">&#128276; Aktifkan Notif Tarik</button>
     </div>
 
@@ -465,9 +466,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       <div style="font-size:11px;font-weight:700;color:var(--cyan);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px">&#127777;&#65039; Pengingat Cek Suhu</div>
       <p style="font-size:12px;color:var(--text2);margin-bottom:10px">Pengingat cek suhu 2x sehari — jam seragam untuk semua HP tim.</p>
       <div style="display:flex;gap:8px;margin-bottom:8px">
-        <div style="flex:1"><div style="font-size:10px;color:var(--text3);margin-bottom:4px">Jam Pagi</div><input type="time" id="suhu-jam-pagi" value="09:00" class="finput" style="padding:8px;font-size:14px"></div>
-        <div style="flex:1"><div style="font-size:10px;color:var(--text3);margin-bottom:4px">Jam Malam</div><input type="time" id="suhu-jam-malam" value="20:00" class="finput" style="padding:8px;font-size:14px"></div>
+        <div style="flex:1"><div style="font-size:10px;color:var(--text3);margin-bottom:4px">Jam Pagi (WIT)</div><input type="time" id="suhu-jam-pagi" value="08:30" class="finput" style="padding:8px;font-size:14px"></div>
+        <div style="flex:1"><div style="font-size:10px;color:var(--text3);margin-bottom:4px">Jam Malam (WIT)</div><input type="time" id="suhu-jam-malam" value="20:30" class="finput" style="padding:8px;font-size:14px"></div>
       </div>
+      <div style="font-size:10px;color:var(--text3);margin-bottom:8px;font-style:italic">⚙️ Jam ini untuk notif saat app terbuka. Notif FCM (app tertutup) mengikuti jadwal server.</div>
       <button class="sbtn" style="background:linear-gradient(135deg,var(--cyan),#0891b2);margin-bottom:0" onclick="enableNotifSuhu()">&#127777;&#65039; Aktifkan Pengingat Suhu</button>
     </div>
 
@@ -1826,7 +1828,7 @@ async function requestNotifPermission(){
 // CHILL=7, FROZEN=30, DRY=14 (sesuai konfigurasi asli aplikasi)
 
 // Default jam notifikasi
-const DEFAULT_NOTIF = { tarikPagi:'11:00', tarikSore:'19:00', suhuPagi:'09:00', suhuMalam:'20:00' };
+const DEFAULT_NOTIF = { tarikPagi:'11:00', tarikSore:'18:00', suhuPagi:'08:30', suhuMalam:'20:30' };
 
 // Load/save setting notifikasi ke Firebase agar seragam semua HP
 function getNotifSettings(){
@@ -1990,9 +1992,9 @@ async function loadNotifSettingsFromFirebase(){
     if(data && typeof data === 'object'){
       try{ localStorage.setItem('rtv_notif_settings', JSON.stringify(data)); }catch(e){}
       if(document.getElementById('notif-jam-pagi')) document.getElementById('notif-jam-pagi').value = data.tarikPagi || '11:00';
-      if(document.getElementById('notif-jam-sore')) document.getElementById('notif-jam-sore').value = data.tarikSore || '19:00';
-      if(document.getElementById('suhu-jam-pagi')) document.getElementById('suhu-jam-pagi').value = data.suhuPagi || '09:00';
-      if(document.getElementById('suhu-jam-malam')) document.getElementById('suhu-jam-malam').value = data.suhuMalam || '20:00';
+      if(document.getElementById('notif-jam-sore')) document.getElementById('notif-jam-sore').value = data.tarikSore || '18:00';
+      if(document.getElementById('suhu-jam-pagi')) document.getElementById('suhu-jam-pagi').value = data.suhuPagi || '08:30';
+      if(document.getElementById('suhu-jam-malam')) document.getElementById('suhu-jam-malam').value = data.suhuMalam || '20:30';
     }
   }catch(e){ /* Firebase belum ada notifSettings, pakai default */ }
 }
@@ -2005,14 +2007,14 @@ async function enableNotifTarik(){
     return;
   }
   const pagi = document.getElementById('notif-jam-pagi').value || '11:00';
-  const sore = document.getElementById('notif-jam-sore').value || '19:00';
+  const sore = document.getElementById('notif-jam-sore').value || '18:00';
   const s = getNotifSettings();
   s.tarikPagi = pagi;
   s.tarikSore = sore;
   saveNotifSettings(s);
   startNotifScheduler();
   try{ localStorage.setItem('rtv_notif_tarik','true'); }catch(e){}
-  showNotifStatus('✅ Notif tarik aktif: jam ' + pagi + ' & ' + sore);
+  showNotifStatus('✅ Notif tarik aktif: ' + pagi + ' & ' + sore + ' WIT');
   toast('&#128276; Notif tarik produk aktif!','#22c55e');
 }
 
@@ -2023,15 +2025,15 @@ async function enableNotifSuhu(){
     toast('Izin notifikasi ditolak. Aktifkan di pengaturan browser.','#ef4444');
     return;
   }
-  const pagi = document.getElementById('suhu-jam-pagi').value || '09:00';
-  const malam = document.getElementById('suhu-jam-malam').value || '20:00';
+  const pagi = document.getElementById('suhu-jam-pagi').value || '08:30';
+  const malam = document.getElementById('suhu-jam-malam').value || '20:30';
   const s = getNotifSettings();
   s.suhuPagi = pagi;
   s.suhuMalam = malam;
   saveNotifSettings(s);
   startNotifScheduler();
   try{ localStorage.setItem('rtv_notif_suhu','true'); }catch(e){}
-  showNotifStatus('✅ Pengingat suhu aktif: jam ' + pagi + ' & ' + malam);
+  showNotifStatus('✅ Pengingat suhu aktif: ' + pagi + ' & ' + malam + ' WIT');
   toast('&#127777;&#65039; Pengingat suhu aktif!','#06b6d4');
 }
 
