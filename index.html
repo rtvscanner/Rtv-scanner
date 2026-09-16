@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
 <!-- Firebase SDK untuk FCM -->
 <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-messaging-compat.js"></script>
 <title>RTV Scanner & Damage Alert — Hypermart</title>
 <!-- PWA -->
@@ -598,6 +599,19 @@ async function initApp(){
   const loginBox = document.getElementById('loginBox');
   if(loginLoading) loginLoading.style.display='block';
   if(loginBox) loginBox.style.display='none';
+
+  // ── ANONYMOUS AUTH — login otomatis di background untuk keamanan database ──
+  try {
+    const authApp = firebase.apps.length ? firebase.apps[0] : firebase.initializeApp(FCM_CONFIG);
+    const auth = firebase.auth(authApp);
+    if (!auth.currentUser) {
+      await auth.signInAnonymously();
+      console.log('[Auth] Anonymous sign-in berhasil');
+    }
+  } catch(authErr) {
+    console.warn('[Auth] Anonymous sign-in gagal:', authErr.message);
+    // Lanjut meski auth gagal — app tetap bisa jalan
+  }
 
   try{
     showSyncStatus('syncing');
