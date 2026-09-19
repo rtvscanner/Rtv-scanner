@@ -5,10 +5,8 @@
 
 const admin = require('firebase-admin');
 
-// Ambil Service Account dari GitHub Secret
 const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
 
-// Inisialisasi Firebase
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
   databaseURL: 'https://rtv-scaner-default-rtdb.asia-southeast1.firebasedatabase.app'
@@ -16,14 +14,15 @@ admin.initializeApp({
 
 const db = admin.database();
 
-// ── Threshold peringatan dan tarik ──
-const THR_WARN  = { CHILL: 21, FROZEN: 60, DRY: 21 }; // Perhatian — diskon
-const THR_TARIK = { CHILL: 7,  FROZEN: 30, DRY: 7  }; // Segera tarik
+// ── Threshold default (fallback jika produk tidak punya field tarik/warn) ──
+// Sesuai dengan yang ditampilkan di app
+const THR_WARN  = { CHILL: 21, FROZEN: 60, DRY: 21 };
+const THR_TARIK = { CHILL: 7,  FROZEN: 30, DRY: 7  };
 
 // ── Hitung sisa hari ──
-function hariSisa(tglTarik) {
-  if (!tglTarik) return 9999;
-  const exp = new Date(tglTarik);
+function hariSisa(expDate) {
+  if (!expDate) return 9999;
+  const exp = new Date(expDate);
   const now = new Date();
   now.setHours(0, 0, 0, 0);
   exp.setHours(0, 0, 0, 0);
@@ -43,15 +42,15 @@ function jenisNotif() {
 
 // ── Ambil semua FCM token ──
 async function getAllTokens() {
-  const snap = await db.ref('/fcmTokens').once('value');
+  const snap = await db.ref('/app/fcmTokens').once('value');
   if (!snap.exists()) return [];
   const data = snap.val();
   return Object.values(data).filter(t => t && typeof t === 'string');
 }
 
-// ── Ambil semua produk notifikasi ──
+// ── Ambil semua produk dari notif ──
 async function getAllNotifs() {
-  const snap = await db.ref('/notifs').once('value');
+  const snap = await db.ref('/app/notifs').once('value');
   if (!snap.exists()) return [];
   const data = snap.val();
   if (Array.isArray(data)) return data.filter(Boolean);
@@ -92,28 +91,28 @@ async function kirimFCM(title, body, tag) {
     const response = await admin.messaging().sendEachForMulticast(message);
     console.log(`✅ Terkirim: ${response.successCount}/${tokens.length} HP`);
 
-    // Hapus token tidak valid
     if (response.failureCount > 0) {
       const invalid = [];
       response.responses.forEach((r, i) => {
         if (!r.success) {
           const code = r.error && r.error.code;
-          if (code === 'messaging/invalid-registration-token' ||
-              code === 'messaging/registration-token-not-registered') {
+          if (
+            code === 'messaging/invalid-registration-token' ||
+            code === 'messaging/registration-token-not-registered'
+          ) {
             invalid.push(tokens[i]);
             console.log(`❌ Token tidak valid: ${tokens[i].substring(0, 20)}...`);
           }
         }
       });
-      // Hapus token invalid dari Firebase
       if (invalid.length > 0) {
-        const snap = await db.ref('/fcmTokens').once('value');
+        const snap = await db.ref('/app/fcmTokens').once('value');
         const data = snap.val();
         const updates = {};
         Object.entries(data).forEach(([key, val]) => {
           if (invalid.includes(val)) updates[key] = null;
         });
-        await db.ref('/fcmTokens').update(updates);
+        await db.ref('/app/fcmTokens').update(updates);
         console.log(`🗑️ ${invalid.length} token tidak valid dihapus`);
       }
     }
@@ -123,13 +122,13 @@ async function kirimFCM(title, body, tag) {
 }
 
 // ── Parse threshold dari string "H-14" → 14 ──
-function parseThr(tarikStr) {
-  if (!tarikStr) return 999;
-  const match = String(tarikStr).match(/(\d+)/);
-  return match ? parseInt(match[1]) : 999;
+function parseThr(str) {
+  if (!str) return null;
+  const match = String(str).match(/(\d+)/);
+  return match ? parseInt(match[1]) : null;
 }
 
-// ── Analisa produk ──
+// ── Analisa produk — sesuai logika app ──
 async function analisaProduk() {
   const notifs = await getAllNotifs();
   console.log(`📦 Total produk di notif: ${notifs.length}`);
@@ -139,14 +138,16 @@ async function analisaProduk() {
 
   notifs.forEach(n => {
     if (!n.expDate) return;
+
     const suhu = (n.suhu || 'DRY').toUpperCase();
-    const key = ['CHILL','FROZEN','DRY'].includes(suhu) ? suhu : 'DRY';
+    const key  = ['CHILL', 'FROZEN', 'DRY'].includes(suhu) ? suhu : 'DRY';
     const sisa = hariSisa(n.expDate);
 
-    const thrT = parseThr(n.tarik);
-    const thrW = THR_WARN[key];
+    // Gunakan threshold per-produk jika ada, fallback ke default
+    const thrT = parseThr(n.tarik) ?? THR_TARIK[key];
+    const thrW = parseThr(n.warn)  ?? THR_WARN[key];
 
-    console.log(`  ${n.desc || n.plu}: expDate=${n.expDate} sisa=${sisa} thrT=${thrT} thrW=${thrW}`);
+    console.log(`  ${n.desc || n.plu}: sisa=${sisa} thrT=${thrT} thrW=${thrW}`);
 
     if (sisa <= thrT) {
       tarik[key].push(n);
@@ -161,10 +162,10 @@ async function analisaProduk() {
   return { warn, tarik };
 }
 
-// ── Format teks notif perhatian dengan NO RETURN ──
+// ── Format teks notif perhatian ──
 function formatWarn(obj) {
   const lines = [];
-  ['CHILL','FROZEN','DRY'].forEach(k => {
+  ['CHILL', 'FROZEN', 'DRY'].forEach(k => {
     if (obj[k] && obj[k].length > 0) {
       const noReturn = obj[k].filter(n =>
         n.flag === 'NO RETURN' || n.noReturn === true || n.noReturn === 'true'
@@ -180,7 +181,7 @@ function formatWarn(obj) {
 // ── Format teks notif tarik ──
 function formatTarik(obj) {
   const lines = [];
-  ['CHILL','FROZEN','DRY'].forEach(k => {
+  ['CHILL', 'FROZEN', 'DRY'].forEach(k => {
     if (obj[k] && obj[k].length > 0) {
       lines.push(`${k}: ${obj[k].length} produk`);
     }
@@ -196,7 +197,7 @@ function adaProduk(obj) {
 async function main() {
   const jenis = jenisNotif();
   console.log(`\n🚀 RTV Scanner Notifikasi — Jenis: ${jenis.toUpperCase()}`);
-  console.log(`⏰ Waktu: ${new Date().toLocaleString('id-ID', {timeZone: 'Asia/Makassar'})}\n`);
+  console.log(`⏰ Waktu: ${new Date().toLocaleString('id-ID', { timeZone: 'Asia/Makassar' })}\n`);
 
   if (jenis === 'suhu') {
     await kirimFCM(
