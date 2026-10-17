@@ -2236,13 +2236,6 @@ async function registerFCMToken() {
 
   console.log('[FCM] Token:', token.substring(0, 30) + '...');
 
-  // Cek apakah token berubah dari sebelumnya
-  const prevToken = localStorage.getItem('fcm_last_token');
-  if (prevToken === token) {
-    console.log('[FCM] Token sama, tidak perlu update Firebase');
-    return;
-  }
-
   // Simpan ke Firebase dengan device ID stabil (1 HP = 1 entri, selalu overwrite)
   const deviceKey = getStableDeviceId();
   const res = await fetch(
@@ -2256,8 +2249,6 @@ async function registerFCMToken() {
 
   if (!res.ok) throw new Error('Gagal simpan token ke Firebase');
 
-  // Simpan token terakhir di localStorage untuk deteksi perubahan berikutnya
-  localStorage.setItem('fcm_last_token', token);
   console.log('[FCM] Token saved dengan device key:', deviceKey);
   console.log('[FCM] Token registration complete!');
 }
