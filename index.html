@@ -1160,6 +1160,7 @@ function confirmSetup(){
       loadProfile();updStats();startPolling();
       logActivity('LOGIN','Setup awal & masuk ke aplikasi');
       if(localStorage.getItem('rtv_reminder')==='true')scheduleReminder();
+      setTimeout(registerFCMToken, 2000);
       setTimeout(checkStartupPopup,2500);
     });
   },800);
@@ -2203,6 +2204,17 @@ function initFCMInline() {
   }
 }
 
+// Ambil atau buat device ID yang stabil (tidak berubah meski token FCM refresh)
+function getStableDeviceId() {
+  let deviceId = localStorage.getItem('fcm_device_id');
+  if (!deviceId) {
+    deviceId = 'dev_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    localStorage.setItem('fcm_device_id', deviceId);
+    console.log('[FCM] Device ID baru dibuat:', deviceId);
+  }
+  return deviceId;
+}
+
 async function registerFCMToken() {
   // Init FCM kalau belum
   if (!_fcmMessaging) {
@@ -2224,8 +2236,15 @@ async function registerFCMToken() {
 
   console.log('[FCM] Token:', token.substring(0, 30) + '...');
 
-  // Simpan ke Firebase via REST
-  const deviceKey = 'dev_' + token.substring(0, 16).replace(/[^a-zA-Z0-9]/g, '_');
+  // Cek apakah token berubah dari sebelumnya
+  const prevToken = localStorage.getItem('fcm_last_token');
+  if (prevToken === token) {
+    console.log('[FCM] Token sama, tidak perlu update Firebase');
+    return;
+  }
+
+  // Simpan ke Firebase dengan device ID stabil (1 HP = 1 entri, selalu overwrite)
+  const deviceKey = getStableDeviceId();
   const res = await fetch(
     'https://rtv-scaner-default-rtdb.asia-southeast1.firebasedatabase.app/app/fcmTokens/' + deviceKey + '.json',
     {
@@ -2236,14 +2255,24 @@ async function registerFCMToken() {
   );
 
   if (!res.ok) throw new Error('Gagal simpan token ke Firebase');
-  console.log('[FCM] Token saved:', deviceKey);
 
+  // Simpan token terakhir di localStorage untuk deteksi perubahan berikutnya
+  localStorage.setItem('fcm_last_token', token);
+  console.log('[FCM] Token saved dengan device key:', deviceKey);
   console.log('[FCM] Token registration complete!');
 }
 
-// Init FCM saat halaman siap
+// Init FCM saat halaman siap + auto re-register token kalau sudah login
 window.addEventListener('load', () => {
-  setTimeout(initFCMInline, 1000);
+  setTimeout(() => {
+    initFCMInline();
+    // Auto re-register token setiap app dibuka (update jika token berubah)
+    if (localStorage.getItem('isLoggedIn') === 'true' || isLoggedIn) {
+      setTimeout(() => {
+        registerFCMToken().catch(e => console.log('[FCM] Auto re-register gagal:', e.message));
+      }, 3000);
+    }
+  }, 1000);
 });
 
 // Fungsi test/daftarkan FCM token dari UI
@@ -2287,11 +2316,12 @@ async function updateFCMStatus() {
     statusEl.textContent = '❌ Browser tidak support notifikasi';
     return;
   }
-  // Cek token FCM di Firebase
+  // Cek token FCM device ini di Firebase (pakai device ID stabil)
   try {
-    const res = await fetch('https://rtv-scaner-default-rtdb.asia-southeast1.firebasedatabase.app/app/fcmTokens.json');
+    const deviceKey = getStableDeviceId();
+    const res = await fetch('https://rtv-scaner-default-rtdb.asia-southeast1.firebasedatabase.app/app/fcmTokens/' + deviceKey + '.json');
     const data = await res.json();
-    if (data && Object.keys(data).length > 0) {
+    if (data && typeof data === 'string' && data.length > 20) {
       statusEl.textContent = '✅ Token FCM aktif — notifikasi siap diterima meski app tertutup';
       return;
     }
