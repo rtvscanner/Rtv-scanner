@@ -953,9 +953,9 @@ function startRealtimeListener(){
     _sseSource.onerror = function(){
       fbOnline = false;
       showSyncStatus('offline');
-      // Auto-reconnect setelah 8 detik
+      // Auto-reconnect setelah 3 detik
       stopRealtimeListener();
-      _sseRetryTimer = setTimeout(startRealtimeListener, 8000);
+      _sseRetryTimer = setTimeout(startRealtimeListener, 3000);
     };
   }catch(err){
     // Fallback ke polling 60s jika SSE tidak didukung
