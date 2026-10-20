@@ -181,6 +181,57 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .ni-actions{display:flex;gap:6px}
 .ni-del{flex:1;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);color:var(--red);border-radius:8px;padding:7px;font-size:11px;font-weight:600;cursor:pointer;text-align:center}
 .ni-edit{flex:1;background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.2);color:var(--blue);border-radius:8px;padding:7px;font-size:11px;font-weight:600;cursor:pointer;text-align:center}
+/* ===== VIEW 2 SORTIR ===== */
+.suhu-filter{display:flex;gap:6px;margin-bottom:6px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+.suhu-filter::-webkit-scrollbar{display:none}
+.sf-chip{padding:6px 14px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;border:1px solid;white-space:nowrap;transition:all 0.2s;flex-shrink:0}
+.sf-chip.ALL{border-color:var(--border);color:var(--text3);background:transparent}
+.sf-chip.ALL.active{background:rgba(255,255,255,0.1);border-color:var(--text2);color:var(--text)}
+.sf-chip.CHILL{border-color:rgba(6,182,212,0.3);color:var(--cyan);background:transparent}
+.sf-chip.CHILL.active{background:rgba(6,182,212,0.18);border-color:var(--cyan)}
+.sf-chip.FROZEN{border-color:rgba(129,140,248,0.3);color:#818cf8;background:transparent}
+.sf-chip.FROZEN.active{background:rgba(129,140,248,0.18);border-color:#818cf8}
+.sf-chip.DRY{border-color:rgba(245,158,11,0.3);color:var(--yellow);background:transparent}
+.sf-chip.DRY.active{background:rgba(245,158,11,0.18);border-color:var(--yellow)}
+.suhu-section{margin-bottom:18px}
+.suhu-sec-hdr{display:flex;align-items:center;gap:8px;padding:9px 12px;border-radius:12px;margin-bottom:8px;border:1px solid}
+.suhu-sec-hdr.CHILL{background:rgba(6,182,212,0.1);border-color:rgba(6,182,212,0.3)}
+.suhu-sec-hdr.FROZEN{background:rgba(129,140,248,0.1);border-color:rgba(129,140,248,0.3)}
+.suhu-sec-hdr.DRY{background:rgba(245,158,11,0.1);border-color:rgba(245,158,11,0.3)}
+.suhu-sec-icon{font-size:18px}
+.suhu-sec-title{font-size:13px;font-weight:800;flex:1}
+.suhu-sec-title.CHILL{color:var(--cyan)}.suhu-sec-title.FROZEN{color:#818cf8}.suhu-sec-title.DRY{color:var(--yellow)}
+.suhu-sec-badge{font-size:10px;font-weight:700;padding:3px 9px;border-radius:20px}
+.suhu-sec-badge.CHILL{background:rgba(6,182,212,0.2);color:var(--cyan)}
+.suhu-sec-badge.FROZEN{background:rgba(129,140,248,0.2);color:#818cf8}
+.suhu-sec-badge.DRY{background:rgba(245,158,11,0.2);color:var(--yellow)}
+.month-group{margin-bottom:12px}
+.month-label{display:flex;align-items:center;gap:8px;margin-bottom:8px;padding:6px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:10px}
+.month-label-text{font-size:13px;font-weight:800;color:var(--text);letter-spacing:0.3px;white-space:nowrap;flex:1}
+.month-label-count{font-size:10px;color:var(--text2);font-weight:700;background:rgba(255,255,255,0.07);border:1px solid var(--border);border-radius:10px;padding:3px 9px;white-space:nowrap}
+.ni2-item{border-radius:10px;padding:10px 11px;margin-bottom:7px;border:1px solid;display:flex;align-items:stretch;gap:9px}
+.ni2-item.s-ok{background:rgba(34,197,94,0.05);border-color:rgba(34,197,94,0.18)}
+.ni2-item.s-warn{background:rgba(245,158,11,0.07);border-color:rgba(245,158,11,0.22)}
+.ni2-item.s-danger{background:rgba(239,68,68,0.07);border-color:rgba(239,68,68,0.22)}
+.ni2-item.s-expired{background:rgba(100,116,139,0.07);border-color:rgba(100,116,139,0.18)}
+.ni2-left{display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:36px;gap:3px}
+.ni2-icon{font-size:18px}
+.ni2-days{font-size:9px;font-weight:700;text-align:center;line-height:1.2;white-space:pre}
+.ni2-days.ok{color:var(--green)}.ni2-days.warn{color:var(--yellow)}.ni2-days.danger{color:var(--red)}.ni2-days.expired{color:var(--text3)}
+.ni2-body{flex:1;min-width:0}
+.ni2-name{font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:3px}
+.ni2-exp{font-size:10px;font-weight:700;margin-bottom:3px}
+.ni2-exp.ok{color:var(--green)}.ni2-exp.warn{color:var(--yellow)}.ni2-exp.danger{color:var(--red)}.ni2-exp.expired{color:var(--text3)}
+.ni2-meta{font-size:9px;color:var(--text3);display:flex;flex-wrap:wrap;gap:5px;align-items:center}
+.ni2-flag-ret{font-size:9px;font-weight:700;color:var(--green)}
+.ni2-flag-nor{font-size:9px;font-weight:700;color:var(--red)}
+.ni2-right{display:flex;flex-direction:column;gap:4px;align-items:flex-end;justify-content:center;flex-shrink:0}
+.ni2-stok{font-size:11px;font-weight:700;text-align:right}
+.ni2-stok-lbl{font-size:8px;color:var(--text3);text-align:right}
+.ni2-action-row{display:flex;gap:4px;margin-top:4px}
+.ni2-btn{border-radius:7px;padding:5px 9px;font-size:10px;cursor:pointer;white-space:nowrap;font-weight:600}
+.ni2-btn.edit{background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.25);color:var(--blue)}
+.ni2-btn.del{background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.25);color:var(--red)}
 .exp-log-item{display:flex;align-items:center;gap:9px;padding:10px 12px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;margin-bottom:7px}
 .exp-log-info{flex:1;min-width:0}
 .exp-log-name{font-size:12px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -314,6 +365,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   <div class="nav-tab" onclick="showPage('data',this)"><span>&#128196;</span>Data</div>
   <div class="nav-tab" onclick="showPage('add',this)"><span>&#10133;</span>Tambah</div>
   <div class="nav-tab" onclick="showPage('notif',this)"><span>&#128276;</span>Notif</div>
+  <div class="nav-tab" onclick="showPage('sortir',this)"><span>&#128203;</span>Sortir</div>
   <div class="nav-tab" onclick="showPage('export',this)"><span>&#128229;</span>Export</div>
   <div class="nav-tab" onclick="requireAdminForProfile(document.querySelectorAll('.nav-tab')[5])"><span>&#128100;</span>Profil</div>
   <div class="nav-tab" onclick="showPage('activity',this)"><span>&#128203;</span>Log</div>
@@ -405,6 +457,24 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   </div>
   <div class="sec-hdr"><div class="sec-title">Dipantau (<span id="notifCount">0</span>)</div><button class="link-btn" onclick="clearAllNotif()">Hapus Semua</button></div>
   <div id="notifList"><div class="empty"><div class="empty-icon">&#128276;</div><div class="empty-title">Belum ada produk dipantau</div><div class="empty-sub">Scan produk lalu tap tombol ungu</div></div></div>
+</div>
+<div class="page" id="page-sortir">
+  <div class="card" style="padding:11px 13px;margin-bottom:12px">
+    <div style="display:flex;gap:7px">
+      <div style="flex:1;background:rgba(6,182,212,0.08);border:1px solid rgba(6,182,212,0.2);border-radius:10px;padding:9px;text-align:center"><div style="font-size:10px;color:var(--cyan);font-weight:700;margin-bottom:2px">CHILL</div><div style="font-size:16px;font-weight:800">H-7</div></div>
+      <div style="flex:1;background:rgba(129,140,248,0.08);border:1px solid rgba(129,140,248,0.2);border-radius:10px;padding:9px;text-align:center"><div style="font-size:10px;color:#818cf8;font-weight:700;margin-bottom:2px">FROZEN</div><div style="font-size:16px;font-weight:800">H-30</div></div>
+      <div style="flex:1;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.2);border-radius:10px;padding:9px;text-align:center"><div style="font-size:10px;color:var(--yellow);font-weight:700;margin-bottom:2px">DRY</div><div style="font-size:16px;font-weight:800">H-14</div></div>
+    </div>
+  </div>
+  <div class="sec-hdr"><div class="sec-title">Sortir Expired (<span id="sortirCount">0</span>)</div><button class="link-btn" onclick="clearAllNotif()">Hapus Semua</button></div>
+  <div class="suhu-filter">
+    <div class="sf-chip ALL active" id="chip-ALL" onclick="setFilter('ALL')">Semua</div>
+    <div class="sf-chip CHILL" id="chip-CHILL" onclick="setFilter('CHILL')">🧊 Chill</div>
+    <div class="sf-chip FROZEN" id="chip-FROZEN" onclick="setFilter('FROZEN')">❄️ Frozen</div>
+    <div class="sf-chip DRY" id="chip-DRY" onclick="setFilter('DRY')">📦 Dry</div>
+  </div>
+  <div style="font-size:10px;color:var(--text3);margin:-4px 0 12px 2px">👆 Ketuk suhu di atas untuk filter tampilan</div>
+  <div id="sortirList"></div>
 </div>
 <div class="page" id="page-export">
   <div class="card">
@@ -1319,9 +1389,26 @@ function showPage(p,el){
 }
 function goNotif(){showPage('notif',document.querySelectorAll('.nav-tab')[3]);}
 
-// FILTER
+// FILTER DATA (halaman data)
 let activeFilter='ALL';
-function setFilter(f,el){activeFilter=f;document.querySelectorAll('.ftag').forEach(x=>x.classList.remove('active'));el.classList.add('active');}
+function setFilter(f,el){
+  // Kalau dipanggil dari chip sortir (tanpa el), update chip sortir
+  if(!el){
+    activeSuhuFilter=f;
+    ['ALL','CHILL','FROZEN','DRY'].forEach(s=>{
+      const chip=document.getElementById('chip-'+s);
+      if(chip) chip.className='sf-chip '+s+(s===f?' active':'');
+    });
+    renderSortirList();
+    return;
+  }
+  activeFilter=f;
+  document.querySelectorAll('.ftag').forEach(x=>x.classList.remove('active'));
+  el.classList.add('active');
+}
+
+// FILTER SUHU (halaman sortir)
+let activeSuhuFilter='ALL';
 
 // SEARCH
 let scanHist=[],camStream=null,scanIv=null,isCamOn=false,pendingNotifItem=null;
@@ -1719,6 +1806,8 @@ function updNotifBadge(){
 }
 function renderNotifList(){
   setText('notifCount',NOTIFS.length);
+  setText('sortirCount',NOTIFS.length);
+  renderSortirList();
   if(!NOTIFS.length){document.getElementById('notifList').innerHTML='<div class="empty"><div class="empty-icon">&#128276;</div><div class="empty-title">Belum ada produk dipantau</div><div class="empty-sub">Scan produk lalu tap tombol ungu</div></div>';return;}
   const sorted=[...NOTIFS].sort((a,b)=>{const sa=getStatus(a),sb=getStatus(b);const ord={expired:0,danger:1,warn:2,ok:3};return(ord[sa.s]||3)-(ord[sb.s]||3)||sa.days-sb.days;});
   const icons={expired:'&#128683;',danger:'&#128680;',warn:'&#9888;&#65039;',ok:'&#9989;'};
@@ -1735,12 +1824,61 @@ function renderNotifList(){
     +'</div>';
   }).join('');
 }
+function renderSortirList(){
+  const el=document.getElementById('sortirList');
+  if(!el)return;
+  const SUHU_ORDER=['CHILL','FROZEN','DRY'];
+  const SUHU_ICONS={CHILL:'🧊',FROZEN:'❄️',DRY:'📦'};
+  const icons={expired:'&#128683;',danger:'&#128680;',warn:'&#9888;&#65039;',ok:'&#9989;'};
+  const filtered=activeSuhuFilter==='ALL'?NOTIFS:NOTIFS.filter(n=>(n.suhu||'DRY').toUpperCase()===activeSuhuFilter);
+  if(!filtered.length){
+    el.innerHTML='<div class="empty"><div class="empty-icon">&#128203;</div><div class="empty-title">Tidak ada produk'+(activeSuhuFilter!=='ALL'?' '+activeSuhuFilter:'')+'</div><div class="empty-sub">Tambah produk lewat halaman Scan</div></div>';
+    return;
+  }
+  const suhuList=activeSuhuFilter==='ALL'?SUHU_ORDER:[activeSuhuFilter];
+  let html='';
+  suhuList.forEach(suhu=>{
+    const items=filtered.filter(n=>(n.suhu||'DRY').toUpperCase()===suhu).sort((a,b)=>new Date(a.expDate)-new Date(b.expDate));
+    if(!items.length)return;
+    const monthMap={},monthOrder=[];
+    items.forEach(n=>{
+      const key=new Date(n.expDate).toLocaleDateString('id-ID',{month:'long',year:'numeric'});
+      if(!monthMap[key]){monthMap[key]=[];monthOrder.push(key);}
+      monthMap[key].push(n);
+    });
+    if(activeSuhuFilter==='ALL'){
+      html+='<div class="suhu-section"><div class="suhu-sec-hdr '+suhu+'"><span class="suhu-sec-icon">'+SUHU_ICONS[suhu]+'</span><span class="suhu-sec-title '+suhu+'">'+suhu+'</span><span class="suhu-sec-badge '+suhu+'">'+items.length+' item</span></div>';
+    } else {
+      html+='<div class="suhu-section">';
+    }
+    monthOrder.forEach(monthKey=>{
+      const mItems=monthMap[monthKey];
+      html+='<div class="month-group"><div class="month-label"><span class="month-label-text">'+monthKey+'</span><span class="month-label-count">'+mItems.length+' item</span></div>';
+      mItems.forEach(n=>{
+        const st=getStatus(n);
+        const nKey='n_'+n.plu;ITEM_CACHE[nKey]={plu:n.plu,sku:n.sku,desc:n.desc,suhu:n.suhu,tarik:n.tarik,flag:n.flag};
+        const daysText=st.s==='expired'?Math.abs(st.days)+' hari\nlalu':'H-'+st.days;
+        const expFmt=new Date(n.expDate).toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'});
+        const flagHtml=n.flag==='RETURN'?'<span class="ni2-flag-ret">&#9989; RET</span>':'<span class="ni2-flag-nor">&#10060; N-RET</span>';
+        html+='<div class="ni2-item s-'+st.s+'">'
+          +'<div class="ni2-left"><div class="ni2-icon">'+(icons[st.s]||'')+'</div><div class="ni2-days '+st.s+'">'+daysText+'</div></div>'
+          +'<div class="ni2-body"><div class="ni2-name">'+n.desc+'</div><div class="ni2-exp '+st.s+'">Exp: '+expFmt+'</div><div class="ni2-meta"><span>PLU: '+n.plu+'</span>'+flagHtml+'</div></div>'
+          +'<div class="ni2-right"><div class="ni2-stok">'+n.stok+' '+(n.satuan||'')+'</div><div class="ni2-stok-lbl">Stok</div>'
+          +'<div class="ni2-action-row"><button class="ni2-btn edit" data-key="'+nKey+'" onclick="openNotifByKey(this.dataset.key)">&#9998;</button><button class="ni2-btn del" data-plu="'+n.plu+'" onclick="delNotif(this.dataset.plu)">&#128465;</button></div></div>'
+        +'</div>';
+      });
+      html+='</div>';
+    });
+    html+='</div>';
+  });
+  el.innerHTML=html;
+}
 function delNotif(plu){showConfirm('Hapus produk ini dari daftar pemantauan?', function(){const delN=NOTIFS.find(n=>n.plu===plu);
   NOTIFS=NOTIFS.filter(n=>n.plu!==plu);try{localStorage.setItem('rtv_notifs',JSON.stringify(NOTIFS));}catch(e){}fbSaveField('notifs',NOTIFS);
   if(delN) logActivity('NOTIF_DEL','Hapus dari notifikasi: '+delN.desc);
   updStats();renderNotifList();toast('Dihapus','#64748b');
   },'Hapus dari Pemantauan');}
-function clearAllNotif(){showConfirm('Hapus semua produk dari daftar pemantauan?', function(){NOTIFS=[];try{localStorage.setItem('rtv_notifs',JSON.stringify(NOTIFS));}catch(e){}fbSaveField('notifs',NOTIFS);updStats();renderNotifList();toast('Semua notifikasi dihapus','#64748b');
+function clearAllNotif(){showConfirm('Hapus semua produk dari daftar pemantauan?', function(){NOTIFS=[];try{localStorage.setItem('rtv_notifs',JSON.stringify(NOTIFS));}catch(e){}fbSaveField('notifs',NOTIFS);updStats();renderNotifList();renderSortirList();toast('Semua notifikasi dihapus','#64748b');
   },'Hapus Semua Pemantauan');}
 function checkStartupPopup(){
   // Reload NOTIFS from localStorage as safety net
